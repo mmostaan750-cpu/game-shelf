@@ -125,11 +125,22 @@ dialog[open]{animation:dlg .25s ease-out}
 @media (hover:hover){.btn.play:hover{animation:wiggle .35s}}
 @keyframes flicker{0%,18%,22%,60%,100%{opacity:1}20%,24%{opacity:.55}}
 h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 1s infinite}
+.car{position:absolute;left:0;bottom:2.8vh;width:clamp(110px,22vmin,230px);animation:drive 16s linear infinite}
+.car svg{display:block;width:100%;height:auto;overflow:visible;filter:drop-shadow(0 0 6px rgba(255,79,163,.6))}
+.wh{transform-box:fill-box;transform-origin:center;animation:spin .5s linear infinite}
+.bump{animation:bump .35s ease-in-out infinite}
+@keyframes drive{from{transform:translateX(-120%)}to{transform:translateX(calc(100vw + 20%))}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes bump{50%{transform:translateY(-.6px)}}
+.fly{position:relative;padding-top:1.5rem}
+.plane{position:absolute;top:0;left:0;width:28px;height:20px;color:var(--pop);filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));animation:float 1.2s ease-in-out infinite;transition:left .15s linear}
+.plane svg{display:block;width:100%;height:100%}
+@keyframes float{50%{transform:translateY(-3px)}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="bg" aria-hidden="true"><i class="stars"></i><i class="sun"></i><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i></div>
+<div class="bg" aria-hidden="true"><i class="stars"></i><i class="sun"></i><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i><div class="car"><svg viewBox="0 0 150 40" aria-hidden="true"><defs><linearGradient id="beam" x1="0" x2="1"><stop offset="0" stop-color="#FFE08A" stop-opacity=".55"/><stop offset="1" stop-color="#FFE08A" stop-opacity="0"/></linearGradient></defs><path d="M118 22L150 14V32Z" fill="url(#beam)"/><g class="bump"><path fill="#FF4FA3" d="M4 28L8 20Q10 17 16 16L36 14Q44 6 56 5L82 5Q92 6 100 14L112 17Q118 19 118 26V30H4Z"/><path fill="#2A1245" d="M46 14Q50 9 58 9H66V14ZM70 9H82Q88 10 93 14H70Z"/><rect x="112" y="21" width="6" height="3" rx="1.5" fill="#FFE08A"/><g class="wh"><circle cx="30" cy="31" r="8" fill="#12061F"/><path d="M30 24V38M23 31H37" stroke="#FFC857" stroke-width="1.4"/></g><g class="wh"><circle cx="94" cy="31" r="8" fill="#12061F"/><path d="M94 24V38M87 31H101" stroke="#FFC857" stroke-width="1.4"/></g></g></svg></div></div>
 <main>
   <h1>Game Shelf</h1>
   <p class="lede">Upload a game and play it right here. Add an HTML game or a ZIP with all of its files and play it here. Any other file type is stored on your shelf for download.</p>
@@ -384,8 +395,16 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
     var s = document.createElement('span'); s.textContent = name;
     var bar = document.createElement('div'); bar.className = 'pbar';
     var fill = document.createElement('i'); bar.appendChild(fill);
-    li.appendChild(s); li.appendChild(bar); $('queue').appendChild(li);
-    return {set: function(p){ fill.style.width = Math.round(p) + '%'; }, end: function(){ li.remove(); }};
+    var fly = document.createElement('div'); fly.className = 'fly';
+    var plane = document.createElement('span'); plane.className = 'plane';
+    plane.innerHTML = '<svg viewBox="0 0 32 20" aria-hidden="true"><g fill="currentColor"><rect x="3" y="8" width="26" height="4" rx="2"/><path d="M13 9L9 0h4l8 9zM13 11L9 20h4l8-9zM4 9L1 4h3l4 5zM4 11l-3 5h3l4-5z"/></g></svg>';
+    fly.appendChild(plane); fly.appendChild(bar);
+    li.appendChild(s); li.appendChild(fly); $('queue').appendChild(li);
+    return {set: function(p){
+      p = Math.max(0, Math.min(100, p));
+      fill.style.width = Math.round(p) + '%';
+      plane.style.left = 'calc((100% - 28px) * ' + (p / 100) + ')';
+    }, end: function(){ li.remove(); }};
   }
 
   function fromHtml(f, j){
