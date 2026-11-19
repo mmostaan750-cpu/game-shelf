@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Game Shelf – upload and play your games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#EEEAF7;--surface:#FFFFFF;--ink:#23204A;--muted:#5E5A85;--line:#CFC8EA;
+  --accent:#3B4BFF;--accent-ink:#FFFFFF;--pop:#FFD84D;--ok:#0E9F6E;--bad:#D6336C;
+  color-scheme:light;box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1A1838;--surface:#26234F;--ink:#F1EEFF;--muted:#A9A4D6;--line:#3D3A74;
+  --accent:#7C88FF;--accent-ink:#14123A;--pop:#FFD84D;--ok:#4ADE9F;--bad:#FF7AA8;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#1A1838;--surface:#26234F;--ink:#F1EEFF;--muted:#A9A4D6;--line:#3D3A74;
+  --accent:#7C88FF;--accent-ink:#14123A;--pop:#FFD84D;--ok:#4ADE9F;--bad:#FF7AA8;color-scheme:dark}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 1rem/1.5 "Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:64rem;margin:0 auto;padding:2rem 1.25rem 4rem}
+h1{font-size:clamp(2.4rem,8vw,4.5rem);line-height:.95;margin:0 0 .75rem;font-weight:800;letter-spacing:-.03em}
+h2{font-size:1.25rem;margin:0 0 .75rem}
+.lede{max-width:34rem;color:var(--muted);margin:0 0 2rem;font-size:1.1rem}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+.drop{display:block;border:3px dashed var(--accent);border-radius:1.25rem;background:var(--surface);padding:2.5rem 1.5rem;text-align:center;transition:transform .15s,background .15s}
+.drop.over{transform:scale(1.015);background:var(--pop);color:#23204A}
+.drop strong{display:block;font-size:1.5rem;margin-bottom:.25rem}
+.drop span{color:var(--muted)}
+.drop.over span{color:#23204A}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop:focus-within{outline:3px solid var(--accent);outline-offset:3px}
+.msg{min-height:1.5rem;margin:.75rem 0 2rem;font-weight:700}
+.msg.ok{color:var(--ok)}.msg.bad{color:var(--bad)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(15rem,1fr));gap:1rem;padding:0;margin:0;list-style:none}
+.cart{background:var(--surface);border:2px solid var(--line);border-radius:.75rem .75rem 1.5rem 1.5rem;overflow:hidden;display:flex;flex-direction:column}
+.label{background:var(--accent);color:var(--accent-ink);padding:1.25rem 1rem;min-height:6.5rem;display:flex;align-items:flex-end}
+.label b{font-size:1.35rem;line-height:1.1;font-weight:800;overflow-wrap:anywhere}
+.meta{padding:.75rem 1rem;color:var(--muted);font-size:.9rem}
+.acts{display:flex;gap:.5rem;padding:0 1rem 1rem;margin-top:auto}
+.btn{border:2px solid var(--ink);background:transparent;color:var(--ink);border-radius:999px;padding:.45rem 1.1rem;font-weight:700}
+.btn.play{background:var(--pop);color:#23204A;border-color:#23204A;flex:1}
+.btn:hover{background:var(--ink);color:var(--bg)}
+.btn.play:hover{background:#23204A;color:var(--pop)}
+.empty{border:2px dashed var(--line);border-radius:1rem;padding:2rem;color:var(--muted);text-align:center}
+dialog{border:0;padding:0;width:min(96vw,72rem);height:min(90vh,52rem);border-radius:1rem;background:var(--surface);color:var(--ink);overflow:hidden}
+dialog::backdrop{background:rgba(20,18,58,.75)}
+.bar{display:flex;align-items:center;gap:.5rem;padding:.6rem .9rem;border-bottom:2px solid var(--line)}
+.bar b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frame{width:100%;height:calc(100% - 3.4rem);border:0;background:#fff;display:block}
+.queue{list-style:none;padding:0;margin:.75rem 0 0;display:grid;gap:.5rem}
+.job{background:var(--surface);border:2px solid var(--line);border-radius:.75rem;padding:.5rem .9rem;font-size:.9rem;overflow-wrap:anywhere}
+.pbar{height:.5rem;border-radius:999px;background:var(--line);overflow:hidden;margin-top:.35rem}
+.pbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s}
+@media (prefers-reduced-motion:reduce){.drop{transition:none}.pbar i{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Game Shelf</h1>
+  <p class="lede">Upload a game and play it right here. Add an HTML file, or a ZIP with all of your game’s files, and it goes on your shelf.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file" accept=".html,.htm,.zip,text/html,application/zip" multiple>
+    <strong>Drop your game here</strong>
+    <span>or click to choose .zip files (up to 1 GB) or .html files (up to 100 MB)</span>
+  </label>
+  <ul class="queue" id="queue"></ul>
+  <div class="msg" id="msg" role="status" aria-live="polite"></div>
+
+  <h2>Your shelf</h2>
+  <ul class="grid" id="shelf"></ul>
+  <div class="empty" id="empty">Your shelf is empty. Upload a game to get started.</div>
+</main>
+
+<dialog id="player" aria-label="Game player">
+  <div class="bar">
+    <b id="ptitle"></b>
+    <button class="btn" id="full" type="button">Fullscreen</button>
+    <button class="btn" id="close" type="button">Close</button>
+  </div>
+  <iframe class="frame" id="frame" title="Game" sandbox="allow-scripts allow-pointer-lock allow-forms allow-modals" allow="fullscreen; gamepad"></iframe>
+</dialog>
+
+<script>
+(function(){
+  var MAX = 1024 * 1024 * 1024;           // 1 GB per upload
+  var MAX_HTML = 100 * 1024 * 1024;       // a single HTML file is read as text, so it is capped lower
+  var $ = function(id){ return document.getElementById(id); };
+  var shelf = $('shelf'), empty = $('empty'), msg = $('msg'), drop = $('drop'),
+      player = $('player'), frame = $('frame');
+  var games = [];   // {id, title, html, size, added}
+  var db = null;
+
+  function say(text, kind){ msg.textContent = text; msg.className = 'msg ' + (kind || ''); }
+
+  function openDB(cb){
+    try{
+      var req = indexedDB.open('game-shelf', 1);
+      req.onupgradeneeded = function(){ req.result.createObjectStore('games', {keyPath:'id'}); };
+      req.onsuccess = function(){ db = req.result; cb(); };
+      req.onerror = function(){ cb(); };
+    }catch(e){ cb(); }
+  }
+  function loadAll(cb){
+    if(!db) return cb();
+    try{
+      var r = db.transaction('games').objectStore('games').getAll();
+      r.onsuccess = function(){ games = r.result || []; cb(); };
+      r.onerror = function(){ cb(); };
+    }catch(e){ cb(); }
+  }
+  function save(g){
+    if(!db) return;
+    try{
+      var tx = db.transaction('games','readwrite');
+      tx.objectStore('games').put(g);
+      tx.onabort = function(){
+        games = games.filter(function(x){ return x.id !== g.id; });
+        render();
+        say('Not enough storage space in this browser for ' + g.title + '. Delete some games and try again.', 'bad');
+      };
+    }catch(e){}
+  }
+  function remove(id){
+    if(!db) return;
+    try{ db.transaction('games','readwrite').objectStore('games').delete(id); }catch(e){}
+  }
+
+  function kb(n){
+    if(n >= 1073741824) return (n/1073741824).toFixed(2) + ' GB';
+    return n < 1048576 ? Math.max(1, Math.round(n/1024)) + ' KB' : (n/1048576).toFixed(1) + ' MB';
+  }
+
+  function render(){
+    shelf.innerHTML = '';
+    empty.hidden = games.length > 0;
+    games.sort(function(a,b){ return b.added - a.added; }).forEach(function(g){
+      var li = document.createElement('li'); li.className = 'cart';
+      var label = document.createElement('div'); label.className = 'label';
+      var t = document.createElement('b'); t.textContent = g.title; label.appendChild(t);
+      var meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = kb(g.size) + ' · added ' + new Date(g.added).toLocaleDateString();
+      var acts = document.createElement('div'); acts.className = 'acts';
+      var play = document.createElement('button'); play.className = 'btn play'; play.type = 'button'; play.textContent = 'Play';
+      play.setAttribute('aria-label', 'Play ' + g.title);
+      play.onclick = function(){ openGame(g); };
+      var del = document.createElement('button'); del.className = 'btn'; del.type = 'button'; del.textContent = 'Delete';
+      del.setAttribute('aria-label', 'Delete ' + g.title);
+      del.onclick = function(){
+        games = games.filter(function(x){ return x.id !== g.id; });
+        remove(g.id); render(); say('Deleted ' + g.title + '.', '');
+      };
+      acts.appendChild(play); acts.appendChild(del);
+      li.appendChild(label); li.appendChild(meta); li.appendChild(acts);
+      shelf.appendChild(li);
+    });
+  }
+
+  var urls = [];
+  var TEXT = /\.(js|mjs|css|json|html?)$/i;
+  var MIME = {js:'text/javascript', mjs:'text/javascript', css:'text/css', json:'application/json', htm:'text/html', html:'text/html'};
+
+  function readText(b, onp){
+    return new Promise(function(res, rej){
+      var r = new FileReader();
+      r.onprogress = function(e){ if(onp && e.lengthComputable) onp(e.loaded / e.total * 100); };
+      r.onload = function(){ res(String(r.result)); };
+      r.onerror = function(){ rej(new Error('could not read the file')); };
+      r.readAsText(b);
+    });
+  }
+
+  // Turn a stored game into one HTML string. ZIP games get their files swapped for temporary blob URLs.
+  function build(g){
+    if(g.html) return Promise.resolve(g.html);
+    var map = {};
+    function rewrite(s){
+      Object.keys(map).sort(function(a, b){ return b.length - a.length; }).forEach(function(p){
+        s = s.split('./' + p).join(map[p]).split(p).join(map[p]);
+      });
+      return s;
+    }
+    g.files.forEach(function(f){
+      if(!TEXT.test(f.path)){ var u = URL.createObjectURL(f.blob); urls.push(u); map[f.path] = u; }
+    });
+    var texts = g.files.filter(function(f){ return TEXT.test(f.path) && f.path !== g.entry; });
+    return texts.reduce(function(p, f){
+      return p.then(function(){
+        return readText(f.blob).then(function(s){
+          var ext = f.path.split('.').pop().toLowerCase();
+          var u = URL.createObjectURL(new Blob([rewrite(s)], {type: MIME[ext]}));
+          urls.push(u); map[f.path] = u;
+        });
+      });
+    }, Promise.resolve()).then(function(){
+      var entry = g.files.filter(function(f){ return f.path === g.entry; })[0];
+      return readText(entry.blob).then(rewrite);
+    });
+  }
+
+  function openGame(g){
+    $('ptitle').textContent = g.title;
+    player.showModal();
+    build(g).then(function(h){ frame.srcdoc = h; }).catch(function(){
+      player.close(); say('Couldn’t open that game.', 'bad');
+    });
+  }
+  $('close').onclick = function(){ player.close(); };
+  player.addEventListener('close', function(){
+    frame.srcdoc = '';
+    urls.forEach(function(u){ URL.revokeObjectURL(u); }); urls = [];
+  });
+  $('full').onclick = function(){
+    try{ (frame.requestFullscreen || frame.webkitRequestFullscreen).call(frame); }catch(e){}
+  };
+
+  function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function titleOf(n){ return n.replace(/\.(html?|zip)$/i, '').replace(/[-_]+/g, ' ').trim() || 'Untitled game'; }
+
+  function job(name){
+    var li = document.createElement('li'); li.className = 'job';
+    var s = document.createElement('span'); s.textContent = name;
+    var bar = document.createElement('div'); bar.className = 'pbar';
+    var fill = document.createElement('i'); bar.appendChild(fill);
+    li.appendChild(s); li.appendChild(bar); $('queue').appendChild(li);
+    return {set: function(p){ fill.style.width = Math.round(p) + '%'; }, end: function(){ li.remove(); }};
+  }
+
+  function fromHtml(f, j){
+    return readText(f, j.set).then(function(s){
+      return {id: newId(), title: titleOf(f.name), html: s, size: f.size, added: Date.now()};
+    });
+  }
+
+  function fromZip(f, j){
+    if(!window.JSZip) return Promise.reject(new Error('ZIP support didn’t load, check your connection'));
+    return JSZip.loadAsync(f).then(function(z){
+      var names = Object.keys(z.files).filter(function(n){
+        return !z.files[n].dir && !/^__MACOSX\//.test(n) && !/(^|\/)\.DS_Store$/.test(n);
+      });
+      var htmls = names.filter(function(n){ return /\.html?$/i.test(n); }).sort(function(a, b){
+        return a.split('/').length - b.split('/').length ||
+          (/(^|\/)index\.html?$/i.test(b) - /(^|\/)index\.html?$/i.test(a));
+      });
+      if(!htmls.length) throw new Error('no HTML file found inside the ZIP');
+      var entryFull = htmls[0];
+      var base = entryFull.indexOf('/') < 0 ? '' : entryFull.slice(0, entryFull.lastIndexOf('/') + 1);
+      var inside = names.filter(function(n){ return n.indexOf(base) === 0; });
+      var files = [], total = 0, i = 0;
+      return inside.reduce(function(p, n){
+        return p.then(function(){
+          return z.file(n).async('blob').then(function(b){
+            total += b.size;
+            if(total > MAX) throw new Error('unpacks to more than 1 GB');
+            files.push({path: n.slice(base.length), blob: b});
+            j.set(++i / inside.length * 100);
+          });
+        });
+      }, Promise.resolve()).then(function(){
+        return {id: newId(), title: titleOf(f.name), entry: entryFull.slice(base.length), files: files, size: f.size, added: Date.now()};
+      });
+    });
+  }
+
+  function handle(f){
+    var isZip = /\.zip$/i.test(f.name);
+    var isHtml = /\.html?$/i.test(f.name) || f.type === 'text/html';
+    if(!isZip && !isHtml) return Promise.reject(new Error('use an .html or .zip file'));
+    if(f.size > (isZip ? MAX : MAX_HTML)) return Promise.reject(new Error(isZip ? 'it is over 1 GB' : 'a single HTML file can be up to 100 MB, use a ZIP for bigger games'));
+    var j = job(f.name);
+    return (isZip ? fromZip(f, j) : fromHtml(f, j)).then(
+      function(g){ j.end(); return g; },
+      function(e){ j.end(); throw e; }
+    );
+  }
+
+  function addFiles(list){
+    var files = Array.prototype.slice.call(list), added = 0, problems = [];
+    if(!files.length) return;
+    say('', '');
+    files.reduce(function(p, f){
+      return p.then(function(){
+        return handle(f).then(function(g){
+          games.push(g); save(g); added++; render();
+        }).catch(function(err){ problems.push(f.name + ': ' + err.message); });
+      });
+    }, Promise.resolve()).then(function(){
+      if(problems.length) say((added ? added + ' added. ' : '') + problems.join('. ') + '.', 'bad');
+      else say(added === 1 ? 'Game added to your shelf.' : added + ' games added to your shelf.', 'ok');
+    });
+  }
+
+  $('file').onchange = function(e){ addFiles(e.target.files); e.target.value = ''; };
+  ['dragenter','dragover'].forEach(function(n){
+    drop.addEventListener(n, function(e){ e.preventDefault(); drop.classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(n){
+    drop.addEventListener(n, function(e){ e.preventDefault(); drop.classList.remove('over'); });
+  });
+  drop.addEventListener('drop', function(e){ addFiles(e.dataTransfer.files); });
+
+  openDB(function(){
+    loadAll(function(){
+      render();
+      if(!db) say('Saving isn’t available here, so games last until you close this page.', '');
+    });
+  });
+})();
+</script>
+</body>
+</html>
+theme: jekyll-theme-minimal
+title: Octocat's homepage
+description: Bookmark this to keep an eye on my project updates!
