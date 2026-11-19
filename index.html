@@ -161,6 +161,12 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
   var MAX = 10 * 1024 * 1024 * 1024;      // 10 GB per upload
   var MAX_HTML = 100 * 1024 * 1024;       // bigger HTML files are stored for download, not played
   var MAX_ZIP = 1536 * 1024 * 1024;       // bigger ZIPs are stored for download, not unpacked
+
+  // ---- Shared shelf (optional): fill these in so uploads show up on every device ----
+  var SB_URL = 'https://qqymlnpdpggjufemdqpl.supabase.co';   // your Supabase Project URL, e.g. https://abcdxyz.supabase.co
+  var SB_KEY = 'sb_publishable_CONConhk7xG0ZohF8O_NSw_3SiLc-wf';   // your Supabase "anon public" key
+  var BUCKET = 'games';
+  var REMOTE = !!(SB_URL && SB_KEY);
   var $ = function(id){ return document.getElementById(id); };
   var shelf = $('shelf'), empty = $('empty'), msg = $('msg'), drop = $('drop'),
       player = $('player'), frame = $('frame');
@@ -169,7 +175,61 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
 
   function say(text, kind){ msg.textContent = text; msg.className = 'msg ' + (kind || ''); }
 
+  function pubUrl(n){ return SB_URL + '/storage/v1/object/public/' + BUCKET + '/' + encodeURIComponent(n); }
+
+  function toGame(r){
+    var ext = ((r.name.match(/\.([^.]+)$/) || [])[1] || '').toLowerCase();
+    var size = (r.metadata && r.metadata.size) || 0;
+    var kind = (ext === 'html' || ext === 'htm') && size <= MAX_HTML ? 'html' : (ext === 'zip' && size <= MAX_ZIP ? 'zip' : 'file');
+    var clean = r.name.replace(/^\d+-/, '');
+    return {id: r.name, remote: true, kind: kind, name: clean,
+      title: clean.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || clean,
+      size: size, added: Date.parse(r.created_at) || Date.now()};
+  }
+
+  function sbHeaders(extra){
+    var h = {apikey: SB_KEY};
+    if(/^eyJ/.test(SB_KEY)) h.Authorization = 'Bearer ' + SB_KEY;   // only legacy JWT-style keys go here
+    for(var k in extra) h[k] = extra[k];
+    return h;
+  }
+
+  function sbList(){
+    return fetch(SB_URL + '/storage/v1/object/list/' + BUCKET, {
+      method: 'POST',
+      headers: sbHeaders({'Content-Type': 'application/json'}),
+      body: JSON.stringify({prefix: '', limit: 1000, sortBy: {column: 'created_at', order: 'desc'}})
+    }).then(function(r){ if(!r.ok) throw new Error('list failed'); return r.json(); })
+      .then(function(rows){ return rows.filter(function(r){ return r.id; }).map(toGame); });
+  }
+
+  function sbUpload(f, j){
+    var name = Date.now() + '-' + f.name.replace(/[^A-Za-z0-9._-]+/g, '_');
+    return new Promise(function(res, rej){
+      var x = new XMLHttpRequest();
+      x.open('POST', SB_URL + '/storage/v1/object/' + BUCKET + '/' + encodeURIComponent(name));
+      x.setRequestHeader('apikey', SB_KEY);
+      if(/^eyJ/.test(SB_KEY)) x.setRequestHeader('Authorization', 'Bearer ' + SB_KEY);
+      x.setRequestHeader('Content-Type', f.type || 'application/octet-stream');
+      x.upload.onprogress = function(e){ if(e.lengthComputable) j.set(e.loaded / e.total * 100); };
+      x.onload = function(){
+        if(x.status < 300) return res(toGame({name: name, created_at: new Date().toISOString(), metadata: {size: f.size}}));
+        var m = ''; try{ m = JSON.parse(x.responseText).message; }catch(e){}
+        rej(new Error(m || ('upload failed (' + x.status + ')')));
+      };
+      x.onerror = function(){ rej(new Error('network error')); };
+      x.send(f);
+    });
+  }
+
+  function loadRemote(g){
+    var u = pubUrl(g.id);
+    if(g.kind === 'html') return fetch(u).then(function(r){ return r.text(); }).then(function(t){ return {html: t}; });
+    return fetch(u).then(function(r){ return r.blob(); }).then(function(b){ b.name = g.name; return fromZip(b, {set: function(){}}); });
+  }
+
   function openDB(cb){
+    if(REMOTE) return cb();
     try{
       var req = indexedDB.open('game-shelf', 1);
       req.onupgradeneeded = function(){ req.result.createObjectStore('games', {keyPath:'id'}); };
@@ -178,6 +238,9 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
     }catch(e){ cb(); }
   }
   function loadAll(cb){
+    if(REMOTE) return sbList().then(function(l){ games = l; cb(); }).catch(function(){
+      say('Could not load the shared shelf. Check the Supabase settings at the top of the code.', 'bad'); cb();
+    });
     if(!db) return cb();
     try{
       var r = db.transaction('games').objectStore('games').getAll();
@@ -232,7 +295,7 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
         games = games.filter(function(x){ return x.id !== g.id; });
         remove(g.id); render(); say('Deleted ' + g.title + '.', '');
       };
-      acts.appendChild(play); acts.appendChild(del);
+      acts.appendChild(play); if(!g.remote) acts.appendChild(del);
       li.appendChild(label); li.appendChild(meta); li.appendChild(acts);
       shelf.appendChild(li);
     });
@@ -254,6 +317,7 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
 
   // Turn a stored game into one HTML string. ZIP games get their files swapped for temporary blob URLs.
   function build(g){
+    if(g.remote) return loadRemote(g).then(build);
     if(g.html) return Promise.resolve(g.html);
     var map = {};
     function rewrite(s){
@@ -366,6 +430,12 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
   }
 
   function download(g){
+    if(g.remote){
+      var l = document.createElement('a');
+      l.href = pubUrl(g.id) + '?download=' + encodeURIComponent(g.name);
+      document.body.appendChild(l); l.click(); l.remove();
+      return;
+    }
     var u = URL.createObjectURL(g.blob), a = document.createElement('a');
     a.href = u; a.download = g.name; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(function(){ URL.revokeObjectURL(u); }, 60000);
@@ -375,6 +445,10 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
     var isZip = /\.zip$/i.test(f.name);
     var isHtml = /\.html?$/i.test(f.name) || f.type === 'text/html';
     if(f.size > MAX) return Promise.reject(new Error('it is over 10 GB'));
+    if(REMOTE){
+      var jr = job(f.name);
+      return sbUpload(f, jr).then(function(g){ jr.end(); return g; }, function(e){ jr.end(); throw e; });
+    }
     var j = job(f.name);
     var asFile = (!isZip && !isHtml) || (isZip && f.size > MAX_ZIP) || (isHtml && f.size > MAX_HTML);
     var work = asFile ? fromFile(f, j) : (isZip ? fromZip(f, j) : fromHtml(f, j));
@@ -412,7 +486,7 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
   openDB(function(){
     loadAll(function(){
       render();
-      if(!db) say('Saving isn’t available here, so games last until you close this page.', '');
+      if(!db && !REMOTE) say('Saving isn’t available here, so games last until you close this page.', '');
     });
   });
 })();
