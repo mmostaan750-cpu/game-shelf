@@ -80,7 +80,7 @@ dialog[open]{display:flex;flex-direction:column;overscroll-behavior:contain}
 }
 html:root:root:root{--bg:#1A0B2E;--surface:#2A1245;--ink:#FFF3E6;--muted:#DDBBD8;--line:#6B2E7A;--accent:#FF4FA3;--accent-ink:#2A0A25;--pop:#FFC857;--ok:#4ADE9F;--bad:#FF8DB4;color-scheme:dark}
 body{background:#1A0B2E}
-body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(circle at 50% 66%,#FFE08A 0 11vmin,#FF8A5B 11.5vmin 17vmin,transparent 17.5vmin),linear-gradient(180deg,#1A0B2E 0%,#4B1670 34%,#C2307E 62%,#FF7A59 82%,#FFC857 100%)}
+body::before{content:"";position:fixed;inset:0;z-index:-2;background:linear-gradient(180deg,#1A0B2E 0%,#4B1670 34%,#C2307E 62%,#FF7A59 82%,#FFC857 100%)}
 body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:30vh;z-index:-1;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200'%3E%3Cpath fill='%2312061F' d='M0 200V176H600V200Z'/%3E%3Cg fill='%2312061F'%3E%3Cpath d='M120 176C124 130 122 100 112 60L118 60C130 100 132 135 130 176Z'/%3E%3Cpath d='M115 62C90 45 65 50 45 68C70 58 92 60 115 62Z'/%3E%3Cpath d='M115 62C100 35 75 28 52 36C80 38 98 48 115 62Z'/%3E%3Cpath d='M115 62C125 36 150 28 175 38C150 40 132 48 115 62Z'/%3E%3Cpath d='M115 62C145 48 170 52 188 72C165 60 140 60 115 62Z'/%3E%3Cpath d='M115 62C112 40 115 22 124 8C124 28 122 45 115 62Z'/%3E%3Cpath d='M440 176C444 140 442 118 436 88L441 88C449 118 451 142 449 176Z'/%3E%3Cpath d='M438 90C418 78 398 82 384 96C402 90 420 90 438 90Z'/%3E%3Cpath d='M438 90C426 70 406 66 390 72C410 74 424 80 438 90Z'/%3E%3Cpath d='M438 90C446 70 466 66 482 74C462 76 450 80 438 90Z'/%3E%3Cpath d='M438 90C458 82 478 86 490 100C472 92 456 90 438 90Z'/%3E%3C/g%3E%3C/svg%3E") repeat-x left bottom/auto 100%}
 h1{background:linear-gradient(90deg,#FFC857,#FF4FA3 60%,#B46CFF);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
 h2,.lede,.msg:not(:empty){text-shadow:0 1px 8px rgba(26,11,46,.85)}
@@ -88,10 +88,48 @@ h2,.lede,.msg:not(:empty){text-shadow:0 1px 8px rgba(26,11,46,.85)}
 .cart{box-shadow:0 8px 24px rgba(0,0,0,.35);transition:transform .15s}
 @media (hover:hover){.cart:hover{transform:translateY(-4px)}}
 @media (min-width:64rem){main{max-width:72rem;padding-top:3.5rem}}
-@media (prefers-reduced-motion:reduce){.drop{transition:none}.pbar i{transition:none}.cart{transition:none}.cart:hover{transform:none}}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:translateY(22px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes shine{from{background-position:0 0}to{background-position:100% 0}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,79,163,0)}50%{box-shadow:0 0 0 7px rgba(255,79,163,.28)}}
+@keyframes stripes{to{background-position:28px 0}}
+@keyframes sunpulse{0%,100%{transform:scale(1);box-shadow:0 0 6vmin 1vmin rgba(255,138,91,.4)}50%{transform:scale(1.05);box-shadow:0 0 12vmin 4vmin rgba(255,138,91,.65)}}
+@keyframes drift{from{transform:translateX(-45vmin)}to{transform:translateX(110vw)}}
+@keyframes twinkle{0%,100%{opacity:.35}50%{opacity:1}}
+@keyframes palms{to{background-position:-90vh bottom}}
+@keyframes dlg{from{opacity:0;transform:translateY(18px) scale(.98)}}
+.bg{position:fixed;inset:0;z-index:-2;overflow:hidden;pointer-events:none}
+.sun{position:absolute;left:50%;top:66%;width:34vmin;height:34vmin;margin:-17vmin 0 0 -17vmin;border-radius:50%;background:radial-gradient(circle closest-side,#FFE08A 0 65%,#FF8A5B 66% 100%);animation:sunpulse 6s ease-in-out infinite}
+.cloud{position:absolute;left:0;height:1.1vmin;border-radius:99px;background:rgba(255,224,200,.32);animation:drift linear infinite}
+.c1{top:38%;width:32vmin;animation-duration:70s}
+.c2{top:50%;width:22vmin;animation-duration:95s;animation-delay:-40s}
+.c3{top:26%;width:26vmin;animation-duration:120s;animation-delay:-80s}
+.stars{position:absolute;top:0;left:0;width:2px;height:2px;border-radius:50%;background:#fff;box-shadow:12vw 6vh #fff,28vw 14vh #fff,45vw 4vh #fff,63vw 11vh #fff,80vw 7vh #fff,92vw 16vh #fff,7vw 20vh #fff,36vw 22vh #fff,71vw 24vh #fff;animation:twinkle 3.5s ease-in-out infinite}
+body::after{animation:palms 90s linear infinite}
+main>*{animation:rise .6s cubic-bezier(.2,.7,.2,1) backwards}
+main>:nth-child(2){animation-delay:.08s}
+main>:nth-child(3){animation-delay:.16s}
+main>:nth-child(n+4){animation-delay:.24s}
+h1{background-size:200% 100%;animation:rise .6s cubic-bezier(.2,.7,.2,1) backwards,shine 6s ease-in-out infinite alternate}
+.drop{animation:rise .6s cubic-bezier(.2,.7,.2,1) .16s backwards,glow 3s ease-in-out .8s infinite}
+.cart.enter{animation:pop .5s cubic-bezier(.2,.8,.2,1.15) backwards}
+.btn{transition:transform .1s,background .15s,color .15s}
+.btn:active{transform:scale(.95)}
+.pbar i{background:linear-gradient(45deg,var(--accent) 25%,#FF8A5B 25% 50%,var(--accent) 50% 75%,#FF8A5B 75%);background-size:28px 28px;animation:stripes .7s linear infinite}
+dialog[open]{animation:dlg .25s ease-out}
+@keyframes fall{to{transform:translate(var(--dx),105vh) rotate(var(--rot));opacity:.9}}
+.confetti{position:fixed;top:-14px;width:10px;height:14px;border-radius:2px;pointer-events:none;z-index:50;animation:fall var(--t) cubic-bezier(.3,.6,.4,1) forwards}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.empty{animation:rise .6s cubic-bezier(.2,.7,.2,1) .3s backwards,bob 3.5s ease-in-out 1s infinite}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-3deg)}75%{transform:rotate(3deg)}}
+@media (hover:hover){.btn.play:hover{animation:wiggle .35s}}
+@keyframes flicker{0%,18%,22%,60%,100%{opacity:1}20%,24%{opacity:.55}}
+h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 1s infinite}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
+<div class="bg" aria-hidden="true"><i class="stars"></i><i class="sun"></i><i class="cloud c1"></i><i class="cloud c2"></i><i class="cloud c3"></i></div>
 <main>
   <h1>Game Shelf</h1>
   <p class="lede">Upload a game and play it right here. Add an HTML game or a ZIP with all of its files and play it here. Any other file type is stored on your shelf for download.</p>
@@ -170,10 +208,14 @@ h2,.lede,.msg:not(:empty){text-shadow:0 1px 8px rgba(26,11,46,.85)}
   }
 
   function render(){
+    var had = {};
+    Array.prototype.forEach.call(shelf.children, function(c){ had[c.dataset.id] = 1; });
+    var n = 0;
     shelf.innerHTML = '';
     empty.hidden = games.length > 0;
     games.sort(function(a,b){ return b.added - a.added; }).forEach(function(g){
-      var li = document.createElement('li'); li.className = 'cart';
+      var li = document.createElement('li'); li.className = 'cart'; li.dataset.id = g.id;
+      if(!had[g.id]){ li.classList.add('enter'); li.style.animationDelay = (Math.min(n++, 8) * 70) + 'ms'; }
       var label = document.createElement('div'); label.className = 'label';
       var t = document.createElement('b'); t.textContent = g.title; label.appendChild(t);
       var meta = document.createElement('div'); meta.className = 'meta';
@@ -255,6 +297,21 @@ h2,.lede,.msg:not(:empty){text-shadow:0 1px 8px rgba(26,11,46,.85)}
     try{ (frame.requestFullscreen || frame.webkitRequestFullscreen).call(frame); }catch(e){}
   };
 
+  function confetti(){
+    if(window.matchMedia && matchMedia('(prefers-reduced-motion:reduce)').matches) return;
+    var cols = ['#FFC857', '#FF4FA3', '#B46CFF', '#4ADE9F', '#FF8A5B'];
+    for(var i = 0; i < 60; i++){
+      var c = document.createElement('i'); c.className = 'confetti';
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.background = cols[i % cols.length];
+      c.style.setProperty('--dx', (Math.random() * 200 - 100) + 'px');
+      c.style.setProperty('--rot', (Math.random() * 720 - 360) + 'deg');
+      c.style.setProperty('--t', (1.8 + Math.random() * 1.6) + 's');
+      c.style.animationDelay = (Math.random() * 0.4) + 's';
+      c.addEventListener('animationend', function(){ this.remove(); });
+      document.body.appendChild(c);
+    }
+  }
   function newId(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function titleOf(n){ return n.replace(/\.(html?|zip)$/i, '').replace(/[-_]+/g, ' ').trim() || 'Untitled game'; }
 
@@ -339,7 +396,7 @@ h2,.lede,.msg:not(:empty){text-shadow:0 1px 8px rgba(26,11,46,.85)}
       });
     }, Promise.resolve()).then(function(){
       if(problems.length) say((added ? added + ' added. ' : '') + problems.join('. ') + '.', 'bad');
-      else say(added === 1 ? 'Game added to your shelf.' : added + ' games added to your shelf.', 'ok');
+      else { say(added === 1 ? 'Game added to your shelf.' : added + ' games added to your shelf.', 'ok'); confetti(); }
     });
   }
 
