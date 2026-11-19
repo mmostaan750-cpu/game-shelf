@@ -137,7 +137,7 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
   <label class="drop" id="drop">
     <input type="file" id="file" multiple>
     <strong><span class="mouse">Drop your game here</span><span class="touch">Tap to choose a game</span></strong>
-    <span><span class="mouse">or click to choose </span>files up to 10 GB. HTML and ZIP games can be played here</span>
+    <span><span class="mouse">or click to choose </span>files up to 50 MB. HTML and ZIP games can be played here</span>
   </label>
   <ul class="queue" id="queue"></ul>
   <div class="msg" id="msg" role="status" aria-live="polite"></div>
@@ -444,7 +444,8 @@ h2{animation:rise .6s cubic-bezier(.2,.7,.2,1) .24s backwards,flicker 5s linear 
   function handle(f){
     var isZip = /\.zip$/i.test(f.name);
     var isHtml = /\.html?$/i.test(f.name) || f.type === 'text/html';
-    if(f.size > MAX) return Promise.reject(new Error('it is over 10 GB'));
+    var limit = REMOTE ? 50 * 1024 * 1024 : MAX;
+    if(f.size > limit) return Promise.reject(new Error('it is over ' + (REMOTE ? '50 MB' : '10 GB')));
     if(REMOTE){
       var jr = job(f.name);
       return sbUpload(f, jr).then(function(g){ jr.end(); return g; }, function(e){ jr.end(); throw e; });
