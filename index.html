@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1A0B2E">
 <title>Game Shelf – upload and play your games</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap">
@@ -58,18 +59,47 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
 .job{background:var(--surface);border:2px solid var(--line);border-radius:.75rem;padding:.5rem .9rem;font-size:.9rem;overflow-wrap:anywhere}
 .pbar{height:.5rem;border-radius:999px;background:var(--line);overflow:hidden;margin-top:.35rem}
 .pbar i{display:block;height:100%;width:0;background:var(--accent);transition:width .1s}
-@media (prefers-reduced-motion:reduce){.drop{transition:none}.pbar i{transition:none}}
+html{-webkit-text-size-adjust:100%}
+body{-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation}
+.btn{min-height:2.75rem}
+.drop strong span{color:inherit}
+.drop .touch{display:none}
+@media (hover:none){.drop .mouse{display:none}.drop .touch{display:inline}}
+dialog[open]{display:flex;flex-direction:column;overscroll-behavior:contain}
+.bar{padding-top:calc(.6rem + env(safe-area-inset-top,0px));padding-left:calc(.9rem + env(safe-area-inset-left,0px));padding-right:calc(.9rem + env(safe-area-inset-right,0px))}
+.frame{height:auto;flex:1;min-height:0}
+@media (max-width:40rem),(max-height:32rem){
+  dialog{width:100vw;max-width:100vw;height:100vh;height:100dvh;max-height:none;border-radius:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+}
+@media (max-width:40rem){
+  main{padding:1.25rem .9rem 3rem}
+  .drop{padding:2rem 1rem}
+  .grid{grid-template-columns:1fr}
+  .label{min-height:5rem}
+}
+html:root:root:root{--bg:#1A0B2E;--surface:#2A1245;--ink:#FFF3E6;--muted:#DDBBD8;--line:#6B2E7A;--accent:#FF4FA3;--accent-ink:#2A0A25;--pop:#FFC857;--ok:#4ADE9F;--bad:#FF8DB4;color-scheme:dark}
+body{background:#1A0B2E}
+body::before{content:"";position:fixed;inset:0;z-index:-2;background:radial-gradient(circle at 50% 66%,#FFE08A 0 11vmin,#FF8A5B 11.5vmin 17vmin,transparent 17.5vmin),linear-gradient(180deg,#1A0B2E 0%,#4B1670 34%,#C2307E 62%,#FF7A59 82%,#FFC857 100%)}
+body::after{content:"";position:fixed;left:0;right:0;bottom:0;height:30vh;z-index:-1;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 200'%3E%3Cpath fill='%2312061F' d='M0 200V176H600V200Z'/%3E%3Cg fill='%2312061F'%3E%3Cpath d='M120 176C124 130 122 100 112 60L118 60C130 100 132 135 130 176Z'/%3E%3Cpath d='M115 62C90 45 65 50 45 68C70 58 92 60 115 62Z'/%3E%3Cpath d='M115 62C100 35 75 28 52 36C80 38 98 48 115 62Z'/%3E%3Cpath d='M115 62C125 36 150 28 175 38C150 40 132 48 115 62Z'/%3E%3Cpath d='M115 62C145 48 170 52 188 72C165 60 140 60 115 62Z'/%3E%3Cpath d='M115 62C112 40 115 22 124 8C124 28 122 45 115 62Z'/%3E%3Cpath d='M440 176C444 140 442 118 436 88L441 88C449 118 451 142 449 176Z'/%3E%3Cpath d='M438 90C418 78 398 82 384 96C402 90 420 90 438 90Z'/%3E%3Cpath d='M438 90C426 70 406 66 390 72C410 74 424 80 438 90Z'/%3E%3Cpath d='M438 90C446 70 466 66 482 74C462 76 450 80 438 90Z'/%3E%3Cpath d='M438 90C458 82 478 86 490 100C472 92 456 90 438 90Z'/%3E%3C/g%3E%3C/svg%3E") repeat-x left bottom/auto 100%}
+h1{background:linear-gradient(90deg,#FFC857,#FF4FA3 60%,#B46CFF);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 2px 0 rgba(0,0,0,.25))}
+h2,.lede,.msg:not(:empty){text-shadow:0 1px 8px rgba(26,11,46,.85)}
+.empty{background:rgba(42,18,69,.85)}
+.cart{box-shadow:0 8px 24px rgba(0,0,0,.35);transition:transform .15s}
+@media (hover:hover){.cart:hover{transform:translateY(-4px)}}
+@media (min-width:64rem){main{max-width:72rem;padding-top:3.5rem}}
+@media (prefers-reduced-motion:reduce){.drop{transition:none}.pbar i{transition:none}.cart{transition:none}.cart:hover{transform:none}}
 </style>
 </head>
 <body>
 <main>
   <h1>Game Shelf</h1>
-  <p class="lede">Upload a game and play it right here. Add an HTML file, or a ZIP with all of your game’s files, and it goes on your shelf.</p>
+  <p class="lede">Upload a game and play it right here. Add an HTML game or a ZIP with all of its files and play it here. Any other file type is stored on your shelf for download.</p>
 
   <label class="drop" id="drop">
-    <input type="file" id="file" accept=".html,.htm,.zip,text/html,application/zip" multiple>
-    <strong>Drop your game here</strong>
-    <span>or click to choose .zip files (up to 1 GB) or .html files (up to 100 MB)</span>
+    <input type="file" id="file" multiple>
+    <strong><span class="mouse">Drop your game here</span><span class="touch">Tap to choose a game</span></strong>
+    <span><span class="mouse">or click to choose </span>files up to 10 GB. HTML and ZIP games can be played here</span>
   </label>
   <ul class="queue" id="queue"></ul>
   <div class="msg" id="msg" role="status" aria-live="polite"></div>
@@ -90,8 +120,9 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
 
 <script>
 (function(){
-  var MAX = 1024 * 1024 * 1024;           // 1 GB per upload
-  var MAX_HTML = 100 * 1024 * 1024;       // a single HTML file is read as text, so it is capped lower
+  var MAX = 10 * 1024 * 1024 * 1024;      // 10 GB per upload
+  var MAX_HTML = 100 * 1024 * 1024;       // bigger HTML files are stored for download, not played
+  var MAX_ZIP = 1536 * 1024 * 1024;       // bigger ZIPs are stored for download, not unpacked
   var $ = function(id){ return document.getElementById(id); };
   var shelf = $('shelf'), empty = $('empty'), msg = $('msg'), drop = $('drop'),
       player = $('player'), frame = $('frame');
@@ -146,11 +177,13 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
       var label = document.createElement('div'); label.className = 'label';
       var t = document.createElement('b'); t.textContent = g.title; label.appendChild(t);
       var meta = document.createElement('div'); meta.className = 'meta';
-      meta.textContent = kb(g.size) + ' · added ' + new Date(g.added).toLocaleDateString();
+      meta.textContent = kb(g.size) + ' · added ' + new Date(g.added).toLocaleDateString() + (g.kind === 'file' ? ' · download only' : '');
       var acts = document.createElement('div'); acts.className = 'acts';
-      var play = document.createElement('button'); play.className = 'btn play'; play.type = 'button'; play.textContent = 'Play';
-      play.setAttribute('aria-label', 'Play ' + g.title);
-      play.onclick = function(){ openGame(g); };
+      var play = document.createElement('button'); play.className = 'btn play'; play.type = 'button';
+      var isFile = g.kind === 'file';
+      play.textContent = isFile ? 'Download' : 'Play';
+      play.setAttribute('aria-label', (isFile ? 'Download ' : 'Play ') + g.title);
+      play.onclick = function(){ if(isFile) download(g); else openGame(g); };
       var del = document.createElement('button'); del.className = 'btn'; del.type = 'button'; del.textContent = 'Delete';
       del.setAttribute('aria-label', 'Delete ' + g.title);
       del.onclick = function(){
@@ -213,6 +246,7 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
     });
   }
   $('close').onclick = function(){ player.close(); };
+  if(!(frame.requestFullscreen || frame.webkitRequestFullscreen)) $('full').hidden = true;
   player.addEventListener('close', function(){
     frame.srcdoc = '';
     urls.forEach(function(u){ URL.revokeObjectURL(u); }); urls = [];
@@ -258,7 +292,7 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
         return p.then(function(){
           return z.file(n).async('blob').then(function(b){
             total += b.size;
-            if(total > MAX) throw new Error('unpacks to more than 1 GB');
+            if(total > MAX_ZIP) throw new Error('unpacks to more than 1.5 GB');
             files.push({path: n.slice(base.length), blob: b});
             j.set(++i / inside.length * 100);
           });
@@ -269,13 +303,25 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
     });
   }
 
+  function fromFile(f, j){
+    j.set(100);
+    return Promise.resolve({id: newId(), title: f.name.replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || f.name, kind: 'file', name: f.name, blob: f, size: f.size, added: Date.now()});
+  }
+
+  function download(g){
+    var u = URL.createObjectURL(g.blob), a = document.createElement('a');
+    a.href = u; a.download = g.name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(u); }, 60000);
+  }
+
   function handle(f){
     var isZip = /\.zip$/i.test(f.name);
     var isHtml = /\.html?$/i.test(f.name) || f.type === 'text/html';
-    if(!isZip && !isHtml) return Promise.reject(new Error('use an .html or .zip file'));
-    if(f.size > (isZip ? MAX : MAX_HTML)) return Promise.reject(new Error(isZip ? 'it is over 1 GB' : 'a single HTML file can be up to 100 MB, use a ZIP for bigger games'));
+    if(f.size > MAX) return Promise.reject(new Error('it is over 10 GB'));
     var j = job(f.name);
-    return (isZip ? fromZip(f, j) : fromHtml(f, j)).then(
+    var asFile = (!isZip && !isHtml) || (isZip && f.size > MAX_ZIP) || (isHtml && f.size > MAX_HTML);
+    var work = asFile ? fromFile(f, j) : (isZip ? fromZip(f, j) : fromHtml(f, j));
+    return work.then(
       function(g){ j.end(); return g; },
       function(e){ j.end(); throw e; }
     );
@@ -316,6 +362,3 @@ dialog::backdrop{background:rgba(20,18,58,.75)}
 </script>
 </body>
 </html>
-theme: jekyll-theme-minimal
-title: Octocat's homepage
-description: Bookmark this to keep an eye on my project updates!
